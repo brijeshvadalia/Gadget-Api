@@ -1,0 +1,234 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "IMF Gadget API",
+    "version": "1.0.0",
+    "description": "Top-secret gadget management system for IMF"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000/api",
+      "description": "Development server"
+    }
+  ],
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "summary": "Agent authentication",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": { "type": "string" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Authentication token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/gadgets": {
+      "get": {
+        "summary": "Get all gadgets",
+        "security": [{"BearerAuth": []}],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Filter by status",
+            "schema": {
+              "type": "string",
+              "enum": ["Available", "Deployed", "Destroyed", "Decommissioned"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of gadgets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GadgetWithProbability"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create new gadget",
+        "security": [{"BearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GadgetInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created gadget",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Gadget"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/gadgets/{id}": {
+      "patch": {
+        "summary": "Update gadget",
+        "security": [{"BearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GadgetInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated gadget",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Gadget"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Decommission gadget",
+        "security": [{"BearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Decommission confirmation"
+          }
+        }
+      }
+    },
+    "/gadgets/{id}/self-destruct": {
+      "post": {
+        "summary": "Trigger self-destruct sequence",
+        "security": [{"BearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Destruction confirmation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "confirmationCode": { "type": "integer" },
+                    "gadgetId": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "Gadget": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "codename": { "type": "string" },
+          "name": { "type": "string" },
+          "status": { 
+            "type": "string",
+            "enum": ["Available", "Deployed", "Destroyed", "Decommissioned"]
+          },
+          "decommissionedAt": { "type": "string", "format": "date-time" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "GadgetWithProbability": {
+        "allOf": [
+          { "$ref": "#/components/schemas/Gadget" },
+          {
+            "type": "object",
+            "properties": {
+              "missionSuccessProbability": { "type": "string" }
+            }
+          }
+        ]
+      },
+      "GadgetInput": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" }
+        },
+        "required": ["name"]
+      }
+    }
+  }
+}
